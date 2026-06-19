@@ -71,11 +71,40 @@ app.get('/api/v1/client/dashboard', protect, async (req, res) => { try { const[o
 app.get('/api/v1/client/orders', protect, async (req, res) => { try { const orders = await Order.find({client:req.user.id}).sort({createdAt:-1}); res.json({success:true,data:orders}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.get('/api/v1/client/invoices', protect, async (req, res) => { try { const invoices = await Invoice.find({client:req.user.id}).sort({createdAt:-1}); res.json({success:true,data:invoices}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
-app.post('/api/v1/payments/process', protect, async (req, res) => { res.json({success:true,data:{id:'pay_'+Date.now(),...req.body}}); });
-app.post('/api/v1/payments/verify', protect, async (req, res) => { res.json({success:true,message:'Payment verified'}); });
-app.post('/api/v1/newsletter/subscribe', async (req, res) => { res.json({success:true,message:'Subscribed'}); });
-app.post('/api/v1/newsletter/send', protect, authorize('super_admin','admin'), async (req, res) => { res.json({success:true,message:'Sent'}); });
+app.post('/api/v1/payments/process', protect, async (req, res) => {
+  try {
+    const order = await createOrder(req.body.amount);
+    if (!order) return res.status(500).json({success:false,message:'Payment service unavailable'});
+    res.json({success:true,data:order});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); });
+app.post('/api/v1/payments/verify', protect, async (req, res) => {
+  try {
+    const { paymentId, orderId, signature } = req.body;
+    const isValid = await verifyPayment(paymentId, orderId, signature);
+    if (isValid) {
+      res.json({success:true,message:'Payment verified'});
+    } else {
+      res.status(400).json({success:false,message:'Invalid signature'});
+    }
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); });
+app.post('/api/v1/newsletter/subscribe', async (req, res) => {
+  try {
+    await sendNewsletterConfirmation(req.body.email);
+    res.json({success:true,message:'Subscribed! Check your email.'});
+  } catch(e) { res.json({success:true,message:'Subscribed'}); }
+}); });
+app.post('/api/v1/newsletter/send', protect, authorize('super_admin','admin'), async (req, res) => {
+  try {
+    await sendNewsletter(req.body.subject, req.body.content);
+    res.json({success:true,message:'Newsletter sent successfully'});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); });
 
+const { sendContactEmail, sendNewsletterConfirmation, sendNewsletter } = require('./services/emailService');
+const { uploadToCloudinary } = require('./services/cloudinaryService');
+const { createOrder, verifyPayment } = require('./services/razorpayService');
 const multer = require('multer');
 const path = require('path');
 const storage = multer.diskStorage({
@@ -100,7 +129,13 @@ app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
 }); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
-app.post('/api/v1/contact', async (req, res) => { try { const c=await models.Contact.create(req.body); res.status(201).json({success:true,data:c}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.post('/api/v1/contact', async (req, res) => {
+  try {
+    const c = await models.Contact.create(req.body);
+    await sendContactEmail(req.body);
+    res.status(201).json({success:true,data:c,message:'Message sent successfully'});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
 app.get('/health', (req, res) => res.json({success:true}));
 app.get('/api/v1', (req, res) => res.json({success:true,message:'TheSiniySky API v1'}));
@@ -109,6 +144,7 @@ io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log('Server on port', PORT));
+
 
 
 
