@@ -4,7 +4,7 @@ services:
     env: node
     region: singapore
     plan: free
-    branch: main
+    branch: master
     buildCommand: npm install
     startCommand: npm run seed && node src/server.js
     healthCheckPath: /health
@@ -66,3 +66,4 @@ services:
       - key: SWAGGER_PATH
         value: /api-docs
     autoDeploy: true
+
