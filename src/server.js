@@ -12,6 +12,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] } });
 
 connectDB();
+app.use('/uploads', express.static('uploads'));
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -75,9 +76,29 @@ app.post('/api/v1/payments/verify', protect, async (req, res) => { res.json({suc
 app.post('/api/v1/newsletter/subscribe', async (req, res) => { res.json({success:true,message:'Subscribed'}); });
 app.post('/api/v1/newsletter/send', protect, authorize('super_admin','admin'), async (req, res) => { res.json({success:true,message:'Sent'}); });
 
+const multer = require('multer');
+const path = require('path');
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const Media = require('./models/Media');
 app.get('/api/v1/media/list', protect, async (req, res) => { try { const files=await Media.find().sort({createdAt:-1}); res.json({success:true,data:files}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.post('/api/v1/media/upload', protect, async (req, res) => { try { const media=await Media.create({filename:'file-'+Date.now(),originalName:'file',url:'/uploads/file',mimeType:'image/png',size:0,uploadedBy:req.user.id}); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'});
+    const media = await Media.create({
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      url: '/uploads/' + req.file.filename,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      uploadedBy: req.user.id
+    });
+    res.json({success:true,data:media});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
 app.post('/api/v1/contact', async (req, res) => { try { const c=await models.Contact.create(req.body); res.status(201).json({success:true,data:c}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
@@ -88,4 +109,5 @@ io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log('Server on port', PORT));
+
 
