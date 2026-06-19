@@ -1,0 +1,68 @@
+services:
+  - type: web
+    name: thesiniysky-backend
+    env: node
+    region: singapore
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm run seed && node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: APP_NAME
+        value: TheSiniySky
+      - key: APP_URL
+        value: https://thesiniysky-backend.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRY
+        value: 7d
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_REFRESH_EXPIRY
+        value: 30d
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_FROM_EMAIL
+        value: thesiniysky@gmail.com
+      - key: SMTP_FROM_NAME
+        value: TheSiniySky
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: BCRYPT_ROUNDS
+        value: "12"
+      - key: MAX_LOGIN_ATTEMPTS
+        value: "5"
+      - key: LOCK_TIME
+        value: "15"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: LOG_DIR
+        value: logs
+      - key: SWAGGER_ENABLED
+        value: "false"
+      - key: SWAGGER_PATH
+        value: /api-docs
+    autoDeploy: true
