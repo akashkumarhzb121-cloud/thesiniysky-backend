@@ -33,9 +33,9 @@ const models = { Project, Blog, Service, Skill: require('./models/Skill'), Exper
 const routeMap = { Project: '/api/v1/projects', Blog: '/api/v1/blogs', Service: '/api/v1/services', Skill: '/api/v1/skills', Experience: '/api/v1/experience', Achievement: '/api/v1/achievements', Testimonial: '/api/v1/testimonials', Resource: '/api/v1/resources', Contact: '/api/v1/contacts', Lead: '/api/v1/leads' };
 Object.entries(routeMap).forEach(([name, path]) => app.use(path, createCRUDRoutes(models[name])));
 
-app.post('/api/v1/blogs/:id/like', protect, async (req, res) => { await Blog.findByIdAndUpdate(req.params.id,{$inc:{likes:1}}); res.json({success:true}); });
-app.post('/api/v1/blogs/:id/bookmark', protect, async (req, res) => { await Blog.findByIdAndUpdate(req.params.id,{$inc:{bookmarks:1}}); res.json({success:true}); });
-app.post('/api/v1/blogs/:id/comments', protect, async (req, res) => { res.json({success:true,message:'Comment added'}); });
+app.post('/api/v1/blogs/:id/like', protect, async (req, res) => { await Blog.findByIdAndUpdate(req.params.id,{$inc:{likes:1}}); res.json({success:true});
+app.post('/api/v1/blogs/:id/bookmark', protect, async (req, res) => { await Blog.findByIdAndUpdate(req.params.id,{$inc:{bookmarks:1}}); res.json({success:true});
+app.post('/api/v1/blogs/:id/comments', protect, async (req, res) => { res.json({success:true,message:'Comment added'});
 app.get('/api/v1/projects/:id/related', async (req, res) => { try { const p = await Project.findById(req.params.id); const r = p ? await Project.find({category:p.category,_id:{$ne:p._id}}).limit(4) : []; res.json({success:true,data:r}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.get('/api/v1/projects/category/:category', async (req, res) => { try { const items = await Project.find({category:req.params.category}); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
@@ -46,11 +46,11 @@ app.get('/api/v1/admin/users', protect, authorize('super_admin','admin'), async 
 app.put('/api/v1/admin/users/:id', protect, authorize('super_admin','admin'), async (req, res) => { try { if(req.body.role&&typeof req.body.role==='string'){ const r=await Role.findOne({name:req.body.role}); if(r)req.body.role=r._id; } const user=await User.findByIdAndUpdate(req.params.id,req.body,{new:true}).populate('role'); res.json({success:true,data:user}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.delete('/api/v1/admin/users/:id', protect, authorize('super_admin'), async (req, res) => { try { await User.findByIdAndDelete(req.params.id); res.json({success:true,message:'Deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.get('/api/v1/admin/roles', protect, async (req, res) => { try { const roles = await Role.find().populate('permissions').lean(); const permissions = await Permission.find().lean(); res.json({success:true,data:{roles:roles||[],permissions:permissions||[]}}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.get('/api/v1/admin/system-logs', protect, authorize('super_admin','admin'), async (req, res) => { res.json({success:true,data:[]}); });
+app.get('/api/v1/admin/system-logs', protect, authorize('super_admin','admin'), async (req, res) => { res.json({success:true,data:[]});
 
 app.get('/api/v1/analytics/dashboard', protect, async (req, res) => { try { const [users,projects]=await Promise.all([User.countDocuments(),Project.countDocuments()]); res.json({success:true,data:{totalUsers:users,totalOrders:projects,totalRevenue:45678,orderStats:{pending:12,processing:8,completed:420,cancelled:16},recentActivity:[]}}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.get('/api/v1/analytics/users', protect, async (req, res) => { res.json({success:true,data:[{month:'Jan',count:100},{month:'Feb',count:200}]}); });
-app.get('/api/v1/analytics/revenue', protect, async (req, res) => { res.json({success:true,data:[{label:'Jan',value:5000},{label:'Feb',value:7500}]}); });
+app.get('/api/v1/analytics/users', protect, async (req, res) => { res.json({success:true,data:[{month:'Jan',count:100},{month:'Feb',count:200}]});
+app.get('/api/v1/analytics/revenue', protect, async (req, res) => { res.json({success:true,data:[{label:'Jan',value:5000},{label:'Feb',value:7500}]});
 
 app.get('/api/v1/crm/leads', protect, async (req, res) => { try { const leads = await models.Lead.find().sort({createdAt:-1}); res.json({success:true,data:leads,pagination:{page:1,limit:100,total:leads.length}}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.post('/api/v1/crm/leads', protect, async (req, res) => { try { const lead = await models.Lead.create(req.body); res.status(201).json({success:true,data:lead}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
@@ -77,7 +77,7 @@ app.post('/api/v1/payments/process', protect, async (req, res) => {
     if (!order) return res.status(500).json({success:false,message:'Payment service unavailable'});
     res.json({success:true,data:order});
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
-}); });
+});
 app.post('/api/v1/payments/verify', protect, async (req, res) => {
   try {
     const { paymentId, orderId, signature } = req.body;
@@ -88,19 +88,19 @@ app.post('/api/v1/payments/verify', protect, async (req, res) => {
       res.status(400).json({success:false,message:'Invalid signature'});
     }
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
-}); });
+});
 app.post('/api/v1/newsletter/subscribe', async (req, res) => {
   try {
     await sendNewsletterConfirmation(req.body.email);
     res.json({success:true,message:'Subscribed! Check your email.'});
   } catch(e) { res.json({success:true,message:'Subscribed'}); }
-}); });
+});
 app.post('/api/v1/newsletter/send', protect, authorize('super_admin','admin'), async (req, res) => {
   try {
     await sendNewsletter(req.body.subject, req.body.content);
     res.json({success:true,message:'Newsletter sent successfully'});
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
-}); });
+});
 
 const { sendContactEmail, sendNewsletterConfirmation, sendNewsletter } = require('./services/emailService');
 const { uploadToCloudinary } = require('./services/cloudinaryService');
@@ -140,7 +140,7 @@ app.post('/api/v1/contact', async (req, res) => {
 app.get('/health', (req, res) => res.json({success:true}));
 app.get('/api/v1', (req, res) => res.json({success:true,message:'TheSiniySky API v1'}));
 app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
-io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
+io.on('connection', (socket) => { socket.on('disconnect', () => {});
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log('Server on port', PORT));
