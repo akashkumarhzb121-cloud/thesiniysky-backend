@@ -106,8 +106,25 @@ app.get('/api/v1/client/invoices', protect, async (req, res) => { try { const in
 
 // Media with Cloudinary
 const Media = require('./models/Media');
-app.get('/api/v1/media/list', protect, async (req, res) => { try { const files=await Media.find().sort({createdAt:-1}); res.json({success:true,data:files}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => { try { if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'}); let url = '/uploads/' + req.file.filename; const cloudinaryUrl = await uploadToCloudinary(req.file.path); if (cloudinaryUrl) url = cloudinaryUrl; const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id }); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.get('/api/v1/media/list', protect, async (req, res) => {
+  try {
+    const files = await Media.find().sort({createdAt:-1}).lean();
+    const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com';
+    const data = files.map(f => ({...f, url: f.url.startsWith('http') ? f.url : baseUrl + f.url}));
+    res.json({success:true,data});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); res.json({success:true,data:files}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'});
+    const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com';
+    let url = baseUrl + '/uploads/' + req.file.filename;
+    const cloudinaryUrl = await uploadToCloudinary(req.file.path);
+    if (cloudinaryUrl) url = cloudinaryUrl;
+    const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id });
+    res.json({success:true,data:media});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
+}); let url = '/uploads/' + req.file.filename; const cloudinaryUrl = await uploadToCloudinary(req.file.path); if (cloudinaryUrl) url = cloudinaryUrl; const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id }); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.post('/api/v1/media/delete', protect, async (req, res) => { try { await Media.findByIdAndDelete(req.body.id); res.json({success:true,message:'Deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
 app.get('/health', (req, res) => res.json({success:true}));
@@ -120,5 +137,6 @@ io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log('Server on port', PORT));
+
 
 
