@@ -114,7 +114,6 @@ app.get('/api/v1/media/list', protect, async (req, res) => {
     res.json({success:true,data});
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
 });
-});
 app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
 io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
 
