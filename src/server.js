@@ -110,33 +110,15 @@ app.get('/api/v1/media/list', protect, async (req, res) => {
   try {
     const files = await Media.find().sort({createdAt:-1}).lean();
     const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com';
-    const data = files.map(f => ({...f, url: f.url.startsWith('http') ? f.url : baseUrl + f.url}));
+    const data = files.map(f => ({...f, url: f.url && f.url.startsWith('http') ? f.url : baseUrl + (f.url || '')}));
     res.json({success:true,data});
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
-}); res.json({success:true,data:files}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'});
-    const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com';
-    let url = baseUrl + '/uploads/' + req.file.filename;
-    const cloudinaryUrl = await uploadToCloudinary(req.file.path);
-    if (cloudinaryUrl) url = cloudinaryUrl;
-    const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id });
-    res.json({success:true,data:media});
-  } catch(e) { res.status(500).json({success:false,message:e.message}); }
-}); let url = '/uploads/' + req.file.filename; const cloudinaryUrl = await uploadToCloudinary(req.file.path); if (cloudinaryUrl) url = cloudinaryUrl; const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id }); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.post('/api/v1/media/delete', protect, async (req, res) => { try { await Media.findByIdAndDelete(req.body.id); res.json({success:true,message:'Deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-
-app.get('/health', (req, res) => res.json({success:true}));
-app.get('/api/v1', (req, res) => res.json({success:true,message:'TheSiniySky API v1'}));
-app.get('/', (req, res) => {
-  res.send('<!DOCTYPE html><html><head><title>TheSiniySky API</title><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"description\" content=\"TheSiniySky Backend API - Premium SaaS Platform\"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#1e1b4b,#312e81);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem}.container{max-width:600px}h1{font-size:3rem;margin-bottom:.5rem;background:linear-gradient(to right,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.badge{display:inline-block;background:#22c55e;color:#fff;padding:.25rem 1rem;border-radius:2rem;font-size:.875rem;margin-bottom:1.5rem}p{color:#94a3b8;margin-bottom:.5rem}a{color:#60a5fa;text-decoration:none}a:hover{text-decoration:underline}.links{margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}.links a{background:rgba(255,255,255,.1);padding:.5rem 1rem;border-radius:.5rem;border:1px solid rgba(255,255,255,.1);transition:all .2s}.links a:hover{background:rgba(255,255,255,.2);text-decoration:none}</style></head><body><div class=\"container\"><span class=\"badge\">✅ Online</span><h1>TheSiniySky API</h1><p>Premium SaaS Platform Backend</p><p style=\"margin-top:1rem;font-size:.75rem;color:#64748b\">Version 1.0 • Node.js • Express • MongoDB</p><div class=\"links\"><a href=\"/health\">Health Check</a><a href=\"/api/v1\">API v1</a></div></div></body></html>');
+});
 });
 app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
 io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log('Server on port', PORT));
-
 
 
