@@ -123,19 +123,21 @@ app.get('/api/v1/debug/cloudinary', protect, authorize('super_admin','admin'), a
 
 // Media routes
 app.get('/api/v1/media/list', protect, async (req, res) => { try { const files = await Media.find().sort({createdAt:-1}).lean(); const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com'; const data = files.map(f => ({...f, url: f.url && f.url.startsWith('http') ? f.url : baseUrl + (f.url || '')})); res.json({success:true,data}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => { try { if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'}); const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com'; let url = baseUrl + '/uploads/' + req.file.filename; const cloudinaryUrl = await uploadToCloudinary(req.file.path); if (cloudinaryUrl) url = cloudinaryUrl; const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id }); res.json({success:true,data:media}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.post('/api/v1/media/delete', protect, async (req, res) => { try { await Media.findByIdAndDelete(req.body.id); res.json({success:true,message:'Deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
-io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
-
-
-app.get('/api/v1/debug/cloudinary', protect, authorize('super_admin','admin'), async (req, res) => {
-  const c = process.env;
-  res.json({success:true,data:{configured:!!(c.CLOUDINARY_CLOUD_NAME&&c.CLOUDINARY_API_KEY&&c.CLOUDINARY_API_SECRET),cloudName:c.CLOUDINARY_CLOUD_NAME?'SET':'MISSING',apiKey:c.CLOUDINARY_API_KEY?'SET':'MISSING',apiSecret:c.CLOUDINARY_API_SECRET?'SET':'MISSING'}});
+app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'});
+    let url = '/uploads/' + req.file.filename;
+    try {
+      const cloudinary = require('cloudinary').v2;
+      cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
+      if (process.env.CLOUDINARY_CLOUD_NAME) {
+        const result = await cloudinary.uploader.upload(req.file.path, { folder: 'thesiniysky' });
+        url = result.secure_url;
+        console.log('Cloudinary upload SUCCESS:', url);
+      }
+    } catch (cloudErr) { console.log('Cloudinary skipped:', cloudErr.message); }
+    const media = await Media.create({ filename: req.file.filename, originalName: req.file.originalname, url: url, mimeType: req.file.mimetype, size: req.file.size, uploadedBy: req.user.id });
+    res.json({success:true,data:media});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
 });
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log('Server on port', PORT));
-
-
-
 
