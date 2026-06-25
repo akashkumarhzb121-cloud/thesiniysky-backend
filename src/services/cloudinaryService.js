@@ -1,27 +1,28 @@
-const cloudinary = require('cloudinary').v2;
+let cloudinary = null;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+function getCloudinary() {
+  if (cloudinary) return cloudinary;
+  
+  const cloudinaryLib = require('cloudinary').v2;
+  cloudinaryLib.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  cloudinary = cloudinaryLib;
+  return cloudinary;
+}
 
 exports.uploadToCloudinary = async (filePath) => {
   try {
-    console.log('Cloudinary config check:', {
-      hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
-      hasApiKey: !!process.env.CLOUDINARY_API_KEY,
-      hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME ? process.env.CLOUDINARY_CLOUD_NAME.substring(0,4) + '...' : 'MISSING'
-    });
-    
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.log('Cloudinary not configured - skipping');
+      console.log('Cloudinary env vars missing');
       return null;
     }
     
-    const result = await cloudinary.uploader.upload(filePath, { folder: 'thesiniysky' });
-    console.log('Cloudinary upload success:', result.secure_url);
+    const cloud = getCloudinary();
+    const result = await cloud.uploader.upload(filePath, { folder: 'thesiniysky' });
+    console.log('Cloudinary SUCCESS:', result.secure_url);
     return result.secure_url;
   } catch (error) {
     console.error('Cloudinary error:', error.message);
@@ -31,7 +32,8 @@ exports.uploadToCloudinary = async (filePath) => {
 
 exports.deleteFromCloudinary = async (publicId) => {
   try {
-    await cloudinary.uploader.destroy(publicId);
+    const cloud = getCloudinary();
+    await cloud.uploader.destroy(publicId);
     return true;
   } catch (error) {
     return false;
