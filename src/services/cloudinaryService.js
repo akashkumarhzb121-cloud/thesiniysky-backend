@@ -8,13 +8,23 @@ cloudinary.config({
 
 exports.uploadToCloudinary = async (filePath) => {
   try {
-    if (!process.env.CLOUDINARY_CLOUD_NAME) return null;
-    const result = await cloudinary.uploader.upload(filePath, {
-      folder: 'thesiniysky',
+    console.log('Cloudinary config check:', {
+      hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+      hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+      hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME ? process.env.CLOUDINARY_CLOUD_NAME.substring(0,4) + '...' : 'MISSING'
     });
+    
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.log('Cloudinary not configured - skipping');
+      return null;
+    }
+    
+    const result = await cloudinary.uploader.upload(filePath, { folder: 'thesiniysky' });
+    console.log('Cloudinary upload success:', result.secure_url);
     return result.secure_url;
   } catch (error) {
-    console.error('Cloudinary upload error:', error);
+    console.error('Cloudinary error:', error.message);
     return null;
   }
 };
