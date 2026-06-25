@@ -144,6 +144,10 @@ app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res
 
 app.post('/api/v1/media/delete', protect, async (req, res) => { try { await Media.findByIdAndDelete(req.body.id); res.json({success:true,message:'Deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
+app.get('/', (req, res) => {
+  res.send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>TheSiniySky API</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#0f172a,#1e293b);color:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem}.container{max-width:600px}h1{font-size:3.5rem;margin-bottom:.5rem;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.badge{display:inline-block;background:#22c55e;color:#fff;padding:.25rem 1rem;border-radius:2rem;font-size:.875rem;margin-bottom:1.5rem}.version{color:#94a3b8;font-size:.875rem;margin-bottom:2rem}.links{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}.links a{background:rgba(255,255,255,.08);color:#94a3b8;padding:.75rem 1.25rem;border-radius:.75rem;text-decoration:none;font-size:.875rem;border:1px solid rgba(255,255,255,.06);transition:all .2s}.links a:hover{background:rgba(255,255,255,.15);color:#fff}</style></head><body><div class="container"><span class="badge">🚀 Operational</span><h1>TheSiniySky</h1><p class="version">API v1.0 • Node.js • MongoDB • Render</p><div class="links"><a href="/health">Health Check</a><a href="/api/v1">API v1</a><a href="https://thesiniysky.vercel.app">Frontend</a><a href="https://thesiniysky.vercel.app/admin">Admin Panel</a></div></div></body></html>');
+});
+
 app.get('/health', (req, res) => res.json({success:true}));
 app.get('/api/v1', (req, res) => res.json({success:true,message:'TheSiniySky API v1'}));
 app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
