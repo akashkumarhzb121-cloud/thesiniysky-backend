@@ -114,6 +114,12 @@ app.get('/api/v1/media/list', protect, async (req, res) => {
     res.json({success:true,data});
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
 });
+
+// Debug endpoint for Cloudinary
+app.get('/api/v1/debug/cloudinary', protect, authorize('super_admin','admin'), async (req, res) => {
+  const c = process.env;
+  res.json({success:true,data:{configured:!!(c.CLOUDINARY_CLOUD_NAME&&c.CLOUDINARY_API_KEY&&c.CLOUDINARY_API_SECRET),cloudName:c.CLOUDINARY_CLOUD_NAME?'SET':'MISSING',apiKey:c.CLOUDINARY_API_KEY?'SET':'MISSING',apiSecret:c.CLOUDINARY_API_SECRET?'SET':'MISSING'}});
+});
 app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
 io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
 
