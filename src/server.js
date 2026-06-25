@@ -141,3 +141,15 @@ app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
 });
 
+
+app.post('/api/v1/media/delete', protect, async (req, res) => { try { await Media.findByIdAndDelete(req.body.id); res.json({success:true,message:'Deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+
+app.get('/health', (req, res) => res.json({success:true}));
+app.get('/api/v1', (req, res) => res.json({success:true,message:'TheSiniySky API v1'}));
+app.use((err, req, res, next) => res.status(500).json({success:false,message:err.message}));
+io.on('connection', (socket) => { socket.on('disconnect', () => {}); });
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log('Server on port', PORT));
+
+module.exports = { app, server, io };
