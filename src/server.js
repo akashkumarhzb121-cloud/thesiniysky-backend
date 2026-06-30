@@ -46,17 +46,17 @@ Object.entries(routeMap).forEach(([name, path]) => app.use(path, createCRUDRoute
 
 app.post('/api/v1/blogs/:id/like', protect, async (req, res) => { await Blog.findByIdAndUpdate(req.params.id,{$inc:{likes:1}}); res.json({success:true}); });
 app.post('/api/v1/blogs/:id/bookmark', protect, async (req, res) => { await Blog.findByIdAndUpdate(req.params.id,{$inc:{bookmarks:1}}); res.json({success:true}); });
-app.post('/api/v1/blogs/:id/comments', protect, async (req, res) => { res.json({success:true,message:'Comment added'}); });
-app.get('/api/v1/projects/:id/related', async (req, res) => { try { const p = await Project.findById(req.params.id); const r = p ? await Project.find({category:p.category,_id:{$ne:p._id}}).limit(4) : []; res.json({success:true,data:r}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-app.get('/api/v1/projects/category/:category', async (req, res) => { try { const items = await Project.find({category:req.params.category}); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-
-// Contact with email
-app.post('/api/v1/contact', async (req, res) => { try { const c = await models.Contact.create(req.body); await sendContactEmail(req.body); res.status(201).json({success:true,data:c,message:'Message sent'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
-
-// Contact settings
-let contactSettings = { email: 'contact@thesiniysky.com', phone: '+1 (555) 123-4567', address: 'New York, NY 10001', supportHours: '24/7' };
-app.get('/api/v1/contact/settings', async (req, res) => { res.json({success:true,data:contactSettings}); });
-app.put('/api/v1/contact/settings', protect, authorize('super_admin','admin'), async (req, res) => { contactSettings = {...contactSettings,...req.body}; res.json({success:true,data:contactSettings}); });
+app.post('/api/v1/blogs/:id/comments', protect, async (req, res) => {
+  try {
+    const Blog = require('./models/Blog');
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({success:false,message:'Blog not found'});
+    blog.comments = blog.comments || [];
+    blog.comments.push({ user: req.user.id, content: req.body.content, createdAt: new Date() });
+    await blog.save();
+    const populated = await Blog.findById(req.params.id).populate('comments.user', 'firstName lastName email').lean();
+    res.json({success:true,data:populated});
+  } catch(e) { res.status(500).json({success:false,message:e.message}); }
 
 // Newsletter with email
 app.post('/api/v1/newsletter/subscribe', async (req, res) => { try { await sendNewsletterConfirmation(req.body.email); res.json({success:true,message:'Subscribed! Check your email.'}); } catch(e) { res.json({success:true,message:'Subscribed'}); } });
