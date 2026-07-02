@@ -122,7 +122,6 @@ app.get('/api/v1/debug/cloudinary', protect, authorize('super_admin','admin'), a
 });
 
 // Media routes
-app.get('/api/v1/media/list', protect, async (req, res) => { try { const files = await Media.find().sort({createdAt:-1}).lean(); const baseUrl = process.env.APP_URL || 'https://thesiniysky-backend.onrender.com'; const data = files.map(f => ({...f, url: f.url && f.url.startsWith('http') ? f.url : baseUrl + (f.url || '')})); res.json({success:true,data}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.post('/api/v1/media/upload', protect, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({success:false,message:'No file uploaded'});
