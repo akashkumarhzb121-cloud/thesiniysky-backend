@@ -40,6 +40,12 @@ app.get('/api/v1/services/featured', async (req, res) => { try { const items = a
 app.get('/api/v1/blogs/trending', async (req, res) => { try { const items = await Blog.find({status:'published'}).sort({likes:-1}).limit(6).lean(); res.json({success:true,data:items||[]}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.get('/api/v1/projects/stats/overview', async (req, res) => { try { const total = await Project.countDocuments(); res.json({success:true,data:{total}}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 
+// UNLIMITED routes (BEFORE /:id to avoid "all" being treated as ObjectId)
+app.get('/api/v1/skills/all', async (req, res) => { try { const items = await require('./models/Skill').find().sort({createdAt:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.get('/api/v1/experience/all', async (req, res) => { try { const items = await require('./models/Experience').find().sort({startDate:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.get('/api/v1/achievements/all', async (req, res) => { try { const items = await require('./models/Achievement').find().sort({createdAt:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+app.get('/api/v1/testimonials/all', async (req, res) => { try { const items = await require('./models/Testimonial').find({status:'approved'}).sort({createdAt:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+
 const models = { Project, Blog, Service, Skill: require('./models/Skill'), Experience: require('./models/Experience'), Achievement: require('./models/Achievement'), Testimonial: require('./models/Testimonial'), Resource: require('./models/Resource'), Contact: require('./models/Contact'), Lead: require('./models/Lead') };
 const routeMap = { Project: '/api/v1/projects', Blog: '/api/v1/blogs', Service: '/api/v1/services', Skill: '/api/v1/skills', Experience: '/api/v1/experience', Achievement: '/api/v1/achievements', Testimonial: '/api/v1/testimonials', Resource: '/api/v1/resources', Contact: '/api/v1/contacts', Lead: '/api/v1/leads' };
 Object.entries(routeMap).forEach(([name, path]) => app.use(path, createCRUDRoutes(models[name])));
