@@ -115,6 +115,19 @@ app.get('/api/v1/media/list', protect, async (req, res) => {
   } catch(e) { res.status(500).json({success:false,message:e.message}); }
 });
 
+
+// Skills - Get ALL (no limit for about page)
+app.get('/api/v1/skills/all', async (req, res) => { try { const items = await require('./models/Skill').find().sort({order:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+
+// Experience - Get ALL (no limit for about page)
+app.get('/api/v1/experience/all', async (req, res) => { try { const items = await require('./models/Experience').find().sort({order:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+
+// Achievements - Get ALL (no limit for about page)
+app.get('/api/v1/achievements/all', async (req, res) => { try { const items = await require('./models/Achievement').find().sort({order:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+
+// Testimonials - Get ALL approved (no limit)
+app.get('/api/v1/testimonials/all', async (req, res) => { try { const items = await require('./models/Testimonial').find({status:'approved'}).sort({createdAt:-1}).lean(); res.json({success:true,data:items}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
+
 // Debug endpoint for Cloudinary
 app.get('/api/v1/debug/cloudinary', protect, authorize('super_admin','admin'), async (req, res) => {
   const c = process.env;
