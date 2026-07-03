@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String },
   phone: { type: String },
   isEmailVerified: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
   refreshTokens: [{ token: String, expiresAt: Date }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
