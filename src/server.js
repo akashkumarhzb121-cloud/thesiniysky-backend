@@ -94,6 +94,7 @@ app.get('/api/v1/crm/pipeline', protect, async (req, res) => { try { const stage
 // Orders & Invoices
 const Order = require('./models/Order');
 const Invoice = require('./models/Invoice');
+app.delete('/api/v1/orders/:id', protect, authorize('super_admin','admin'), async (req, res) => { try { await Order.findByIdAndDelete(req.params.id); res.json({success:true,message:'Order deleted'}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.get('/api/v1/orders', protect, async (req, res) => { try { const filter=req.user.role?.name==='client'?{client:req.user.id}:{}; const orders=await Order.find(filter).populate('client').sort({createdAt:-1}); res.json({success:true,data:orders,pagination:{page:1,limit:100,total:orders.length}}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.post('/api/v1/orders', protect, async (req, res) => { try { const order=await Order.create({...req.body,client:req.user.id}); res.status(201).json({success:true,data:order}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
 app.get('/api/v1/orders/:id', protect, async (req, res) => { try { const order=await Order.findById(req.params.id).populate('client'); res.json({success:true,data:order}); } catch(e) { res.status(500).json({success:false,message:e.message}); } });
